@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <button class="settings-btn" id="settings-btn" title="GitHub 동기화 설정">⚙</button>
+  <button class="settings-btn" id="settings-btn" title="사진 편집 권한 연결">⚙</button>
 
   <header class="cover" id="cover-photo">
     <button class="edit-btn cover-edit" data-target="cover-photo" data-shape="cover">📷 커버 사진 바꾸기</button>
@@ -88,22 +88,13 @@
 
   <div class="modal-overlay" id="settings-overlay" hidden>
     <div class="modal">
-      <h3>🔄 GitHub 동기화 설정</h3>
+      <h3>✏️ 사진 편집 권한 연결</h3>
       <p class="modal-hint">
-        사진을 GitHub 저장소에 저장해서 폰과 PC에서 똑같이 보이게 해줘요.
-        이 정보는 이 브라우저에만 저장돼요.
+        누구나 사진은 볼 수 있어요. 사진을 올리거나 바꾸려면 GitHub 토큰을
+        연결해야 해요. 이 정보는 이 브라우저(기기)에만 저장돼요.
       </p>
-      <label>GitHub 계정 아이디
-        <input type="text" id="gh-owner" placeholder="예: jeffreyoh-thinking" autocomplete="off">
-      </label>
-      <label>저장소 이름
-        <input type="text" id="gh-repo" placeholder="예: chaewoo" autocomplete="off">
-      </label>
-      <label>브랜치
-        <input type="text" id="gh-branch" placeholder="main" autocomplete="off">
-      </label>
       <label>Personal Access Token
-        <input type="password" id="gh-token" placeholder="ghp_..." autocomplete="off">
+        <input type="password" id="gh-token" placeholder="github_pat_..." autocomplete="off">
       </label>
       <p class="modal-status" id="gh-status"></p>
       <div class="modal-actions">

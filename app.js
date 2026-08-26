@@ -1,7 +1,13 @@
 const fileInput = document.getElementById("file-input");
 const addPhotoBtn = document.getElementById("add-photo-btn");
 const EXTRA_KEY = "gallery:extra-ids";
-const GH_KEY = "gh:config";
+const GH_TOKEN_KEY = "gh:token";
+
+// 이 사이트가 사용하는 저장소는 고정값이라 누구나 사진을 "볼" 때는
+// 토큰이 필요 없습니다. 토큰은 "편집(업로드/교체/삭제)"할 때만 필요해요.
+const GH_OWNER = "jeffreyoh-thinking";
+const GH_REPO = "chaewoo";
+const GH_BRANCH = "main";
 
 let currentTarget = null;
 let currentShape = null;
@@ -124,27 +130,26 @@ function clearDynamicSlots() {
 
 /* ---------- GitHub 동기화 ---------- */
 
-function getGhConfig() {
-  try {
-    return JSON.parse(localStorage.getItem(GH_KEY)) || null;
-  } catch {
-    return null;
-  }
+function getGhToken() {
+  return localStorage.getItem(GH_TOKEN_KEY) || "";
 }
 
-function saveGhConfig(cfg) {
-  localStorage.setItem(GH_KEY, JSON.stringify(cfg));
+function saveGhToken(token) {
+  localStorage.setItem(GH_TOKEN_KEY, token);
 }
 
-function clearGhConfig() {
-  localStorage.removeItem(GH_KEY);
+function clearGhToken() {
+  localStorage.removeItem(GH_TOKEN_KEY);
+}
+
+function ghConfig() {
+  return { owner: GH_OWNER, repo: GH_REPO, branch: GH_BRANCH, token: getGhToken() };
 }
 
 function ghHeaders(cfg) {
-  return {
-    Authorization: `Bearer ${cfg.token}`,
-    Accept: "application/vnd.github+json",
-  };
+  const headers = { Accept: "application/vnd.github+json" };
+  if (cfg.token) headers.Authorization = `Bearer ${cfg.token}`;
+  return headers;
 }
 
 async function ghGetFile(cfg, path) {
@@ -204,17 +209,8 @@ function safeIdFromFileName(name) {
 async function initPhotos() {
   clearDynamicSlots();
   ghImageIndex.clear();
-  const cfg = getGhConfig();
-  updateSyncBadge(cfg);
-
-  if (!cfg) {
-    Object.keys(PALETTES).forEach(loadImageLocal);
-    getExtraIds().forEach((id) => {
-      createGallerySlot(id);
-      loadImageLocal(id);
-    });
-    return;
-  }
+  const cfg = ghConfig();
+  updateSyncBadge(!!cfg.token);
 
   try {
     const files = await ghListImages(cfg);
@@ -242,8 +238,13 @@ async function initPhotos() {
       ghImageIndex.set(domId, { path: file.path, sha: file.sha });
     });
   } catch (err) {
-    flashSyncBadge(`불러오기 실패: ${err.message}`, "err");
+    // 네트워크 오류 등으로 GitHub를 읽지 못하면 이 기기의 로컬 저장 내용으로 대체 표시
+    console.error(err);
     Object.keys(PALETTES).forEach(loadImageLocal);
+    getExtraIds().forEach((id) => {
+      createGallerySlot(id);
+      loadImageLocal(id);
+    });
   }
 }
 
@@ -251,11 +252,11 @@ async function initPhotos() {
 
 const syncBadge = document.getElementById("sync-badge");
 
-function updateSyncBadge(cfg) {
+function updateSyncBadge(isEditor) {
   if (!syncBadge) return;
-  if (cfg) {
+  if (isEditor) {
     syncBadge.hidden = false;
-    syncBadge.textContent = "☁️ GitHub 연동됨";
+    syncBadge.textContent = "✏️ 편집 가능 (연결됨)";
     syncBadge.className = "sync-badge ok";
   } else {
     syncBadge.hidden = true;
@@ -267,7 +268,7 @@ function flashSyncBadge(msg, kind) {
   syncBadge.hidden = false;
   syncBadge.textContent = msg;
   syncBadge.className = "sync-badge" + (kind ? ` ${kind}` : "");
-  setTimeout(() => updateSyncBadge(getGhConfig()), 2500);
+  setTimeout(() => updateSyncBadge(!!getGhToken()), 2500);
 }
 
 function setGhStatus(msg, kind) {
@@ -281,19 +282,12 @@ function setGhStatus(msg, kind) {
 
 const settingsBtn = document.getElementById("settings-btn");
 const settingsOverlay = document.getElementById("settings-overlay");
-const ghOwnerInput = document.getElementById("gh-owner");
-const ghRepoInput = document.getElementById("gh-repo");
-const ghBranchInput = document.getElementById("gh-branch");
 const ghTokenInput = document.getElementById("gh-token");
 const ghSaveBtn = document.getElementById("gh-save");
 const ghDisconnectBtn = document.getElementById("gh-disconnect");
 
 function openSettings() {
-  const cfg = getGhConfig();
-  ghOwnerInput.value = cfg?.owner || "";
-  ghRepoInput.value = cfg?.repo || "";
-  ghBranchInput.value = cfg?.branch || "main";
-  ghTokenInput.value = cfg?.token || "";
+  ghTokenInput.value = getGhToken();
   setGhStatus("", "");
   settingsOverlay.hidden = false;
 }
@@ -309,43 +303,48 @@ settingsOverlay.addEventListener("click", (e) => {
 });
 
 ghSaveBtn.addEventListener("click", async () => {
-  const cfg = {
-    owner: ghOwnerInput.value.trim(),
-    repo: ghRepoInput.value.trim(),
-    branch: ghBranchInput.value.trim() || "main",
-    token: ghTokenInput.value.trim(),
-  };
-  if (!cfg.owner || !cfg.repo || !cfg.token) {
-    setGhStatus("계정, 저장소, 토큰을 모두 입력해주세요.", "err");
+  const token = ghTokenInput.value.trim();
+  if (!token) {
+    setGhStatus("토큰을 입력해주세요.", "err");
     return;
   }
 
   setGhStatus("연결 확인 중...", "");
   try {
-    const res = await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}`, { headers: ghHeaders(cfg) });
-    if (!res.ok) {
-      throw new Error(res.status === 401 ? "토큰이 올바르지 않아요" : `저장소를 찾을 수 없어요 (${res.status})`);
-    }
-    saveGhConfig(cfg);
+    const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/images`, {
+      headers: ghHeaders({ token }),
+    });
+    if (res.status === 401) throw new Error("토큰이 올바르지 않아요");
+    if (!res.ok && res.status !== 404) throw new Error(`연결 실패 (${res.status})`);
+
+    saveGhToken(token);
     setGhStatus("연결됐어요! 사진을 불러오는 중...", "ok");
     await initPhotos();
-    setGhStatus("연결 완료 ✅", "ok");
+    setGhStatus("연결 완료 ✅ 이제 사진을 편집할 수 있어요.", "ok");
   } catch (err) {
     setGhStatus(err.message, "err");
   }
 });
 
 ghDisconnectBtn.addEventListener("click", async () => {
-  clearGhConfig();
+  clearGhToken();
   closeSettings();
   await initPhotos();
 });
 
 /* ---------- 사진 업로드(편집 버튼 / 추가 버튼) ---------- */
 
+function requireEditor() {
+  if (getGhToken()) return true;
+  alert("사진을 바꾸려면 먼저 ⚙ 설정에서 GitHub 토큰을 연결해주세요.");
+  openSettings();
+  return false;
+}
+
 document.addEventListener("click", (e) => {
   const btn = e.target.closest(".edit-btn[data-target]");
   if (!btn) return;
+  if (!requireEditor()) return;
   currentTarget = btn.dataset.target;
   currentShape = btn.dataset.shape;
   addingNewSlot = false;
@@ -354,6 +353,7 @@ document.addEventListener("click", (e) => {
 });
 
 addPhotoBtn.addEventListener("click", () => {
+  if (!requireEditor()) return;
   addingNewSlot = true;
   currentShape = "gallery";
   fileInput.value = "";
@@ -363,49 +363,35 @@ addPhotoBtn.addEventListener("click", () => {
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file || (!currentTarget && !addingNewSlot)) return;
+  if (!getGhToken()) return;
 
   const maxSize = currentShape === "cover" ? 1200 : currentShape === "avatar" ? 400 : 800;
-  const cfg = getGhConfig();
+  const cfg = ghConfig();
 
   try {
     const dataUrl = await resizeImage(file, maxSize);
 
-    if (cfg) {
-      let id = currentTarget;
-      let path;
+    let id = currentTarget;
+    let path;
 
-      if (addingNewSlot) {
-        const ts = Date.now();
-        id = `extra-${ts}`;
-        path = `images/photo-extra-${ts}.jpg`;
-        createGallerySlot(id);
-        addingNewSlot = false;
-      } else {
-        path = ghImageIndex.get(id)?.path || `images/${id}.jpg`;
-      }
-      currentTarget = id;
-
-      applyImage(id, dataUrl);
-      document.getElementById(id)?.classList.add("has-image");
-      flashSyncBadge("☁️ 저장하는 중...", "");
-
-      const result = await ghPutFile(cfg, path, dataUrlToBase64(dataUrl), `사진 업데이트: ${path}`);
-      ghImageIndex.set(id, { path, sha: result.content.sha });
-      flashSyncBadge("☁️ 저장됨 ✅", "ok");
+    if (addingNewSlot) {
+      const ts = Date.now();
+      id = `extra-${ts}`;
+      path = `images/photo-extra-${ts}.jpg`;
+      createGallerySlot(id);
+      addingNewSlot = false;
     } else {
-      if (addingNewSlot) {
-        const extraIds = getExtraIds();
-        const newId = `photo-${7 + extraIds.length}`;
-        createGallerySlot(newId);
-        extraIds.push(newId);
-        saveExtraIds(extraIds);
-        currentTarget = newId;
-        addingNewSlot = false;
-      }
-      applyImage(currentTarget, dataUrl);
-      localStorage.setItem(`photo:${currentTarget}`, dataUrl);
-      document.getElementById(currentTarget)?.classList.add("has-image");
+      path = ghImageIndex.get(id)?.path || `images/${id}.jpg`;
     }
+    currentTarget = id;
+
+    applyImage(id, dataUrl);
+    document.getElementById(id)?.classList.add("has-image");
+    flashSyncBadge("☁️ 저장하는 중...", "");
+
+    const result = await ghPutFile(cfg, path, dataUrlToBase64(dataUrl), `사진 업데이트: ${path}`);
+    ghImageIndex.set(id, { path, sha: result.content.sha });
+    flashSyncBadge("☁️ 저장됨 ✅", "ok");
   } catch (err) {
     alert("사진을 저장하지 못했어요: " + err.message);
   }
@@ -422,44 +408,28 @@ function closeContextMenu() {
 }
 
 async function deletePhoto(id) {
-  const cfg = getGhConfig();
-
-  if (cfg) {
-    const entry = ghImageIndex.get(id);
-    if (!entry) return;
-    try {
-      flashSyncBadge("☁️ 삭제하는 중...", "");
-      await ghDeleteFile(cfg, entry.path, entry.sha, `사진 삭제: ${entry.path}`);
-      ghImageIndex.delete(id);
-      if (Object.prototype.hasOwnProperty.call(PALETTES, id)) {
-        document.getElementById(id)?.classList.remove("has-image");
-        applyImage(id, placeholderDataUrl(id));
-      } else {
-        document.getElementById(id)?.remove();
-      }
-      flashSyncBadge("☁️ 삭제됨 ✅", "ok");
-    } catch (err) {
-      alert("삭제하지 못했어요: " + err.message);
-      updateSyncBadge(cfg);
-    }
-    return;
-  }
-
-  localStorage.removeItem(`photo:${id}`);
-  const extraIds = getExtraIds();
-  if (extraIds.includes(id)) {
-    saveExtraIds(extraIds.filter((extraId) => extraId !== id));
-    document.getElementById(id)?.remove();
-  } else {
-    const card = document.getElementById(id);
-    if (card) {
-      card.classList.remove("has-image");
+  const cfg = ghConfig();
+  const entry = ghImageIndex.get(id);
+  if (!entry) return;
+  try {
+    flashSyncBadge("☁️ 삭제하는 중...", "");
+    await ghDeleteFile(cfg, entry.path, entry.sha, `사진 삭제: ${entry.path}`);
+    ghImageIndex.delete(id);
+    if (Object.prototype.hasOwnProperty.call(PALETTES, id)) {
+      document.getElementById(id)?.classList.remove("has-image");
       applyImage(id, placeholderDataUrl(id));
+    } else {
+      document.getElementById(id)?.remove();
     }
+    flashSyncBadge("☁️ 삭제됨 ✅", "ok");
+  } catch (err) {
+    alert("삭제하지 못했어요: " + err.message);
+    updateSyncBadge(!!cfg.token);
   }
 }
 
 document.addEventListener("contextmenu", (e) => {
+  if (!getGhToken()) return; // 편집 권한이 없으면 브라우저 기본 메뉴(이미지 저장 등)를 그대로 둠
   const card = e.target.closest(".photo-card.has-image");
   if (!card) return;
   e.preventDefault();
@@ -501,39 +471,24 @@ document.addEventListener("keydown", (e) => {
 /* ---------- 모든 사진 초기화 ---------- */
 
 document.getElementById("reset-all").addEventListener("click", async () => {
-  const cfg = getGhConfig();
+  if (!requireEditor()) return;
 
-  if (cfg) {
-    if (!confirm("기본 6개 슬롯의 사진을 삭제하고 샘플로 되돌릴까요? (직접 추가한 사진은 유지돼요)")) return;
-    for (const id of Object.keys(PALETTES)) {
-      const entry = ghImageIndex.get(id);
-      if (!entry) continue;
-      try {
-        await ghDeleteFile(cfg, entry.path, entry.sha, `사진 초기화: ${entry.path}`);
-        ghImageIndex.delete(id);
-        document.getElementById(id)?.classList.remove("has-image");
-        applyImage(id, placeholderDataUrl(id));
-      } catch (err) {
-        alert(`${id} 삭제 실패: ${err.message}`);
-      }
+  if (!confirm("기본 6개 슬롯의 사진을 삭제하고 샘플로 되돌릴까요? (직접 추가한 사진은 유지돼요)")) return;
+
+  const cfg = ghConfig();
+  for (const id of Object.keys(PALETTES)) {
+    const entry = ghImageIndex.get(id);
+    if (!entry) continue;
+    try {
+      await ghDeleteFile(cfg, entry.path, entry.sha, `사진 초기화: ${entry.path}`);
+      ghImageIndex.delete(id);
+      document.getElementById(id)?.classList.remove("has-image");
+      applyImage(id, placeholderDataUrl(id));
+    } catch (err) {
+      alert(`${id} 삭제 실패: ${err.message}`);
     }
-    flashSyncBadge("☁️ 초기화 완료 ✅", "ok");
-    return;
   }
-
-  if (!confirm("모든 사진을 샘플 이미지로 되돌릴까요? 추가로 올린 사진도 함께 삭제돼요.")) return;
-
-  Object.keys(PALETTES).forEach((id) => {
-    localStorage.removeItem(`photo:${id}`);
-    document.getElementById(id)?.classList.remove("has-image");
-    applyImage(id, placeholderDataUrl(id));
-  });
-
-  getExtraIds().forEach((id) => {
-    localStorage.removeItem(`photo:${id}`);
-    document.getElementById(id)?.remove();
-  });
-  localStorage.removeItem(EXTRA_KEY);
+  flashSyncBadge("☁️ 초기화 완료 ✅", "ok");
 });
 
 initPhotos();

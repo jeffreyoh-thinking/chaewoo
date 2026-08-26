@@ -303,6 +303,8 @@ footer {
   color: var(--purple);
 }
 
+.sync-badge[hidden] { display: none; }
+
 .sync-badge.ok { background: #dcfce7; color: #16a34a; }
 .sync-badge.err { background: #fee2e2; color: #dc2626; }
 
