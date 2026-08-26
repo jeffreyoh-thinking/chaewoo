@@ -8,6 +8,8 @@
 </head>
 <body>
 
+  <button class="settings-btn" id="settings-btn" title="GitHub 동기화 설정">⚙</button>
+
   <header class="cover" id="cover-photo">
     <button class="edit-btn cover-edit" data-target="cover-photo" data-shape="cover">📷 커버 사진 바꾸기</button>
     <div class="profile">
@@ -30,7 +32,7 @@
     </section>
 
     <section class="gallery">
-      <h2>🖼️ 갤러리</h2>
+      <h2>🖼️ 갤러리 <span class="sync-badge" id="sync-badge" hidden></span></h2>
       <p class="hint">사진 위에 마우스를 올리거나 눌러서 나만의 사진으로 바꿔보세요.</p>
       <div class="grid">
         <div class="photo-card" id="photo-1">
@@ -82,6 +84,33 @@
   <div class="context-menu" id="context-menu" hidden>
     <button type="button" data-action="replace">🔄 교체</button>
     <button type="button" data-action="delete">🗑 삭제</button>
+  </div>
+
+  <div class="modal-overlay" id="settings-overlay" hidden>
+    <div class="modal">
+      <h3>🔄 GitHub 동기화 설정</h3>
+      <p class="modal-hint">
+        사진을 GitHub 저장소에 저장해서 폰과 PC에서 똑같이 보이게 해줘요.
+        이 정보는 이 브라우저에만 저장돼요.
+      </p>
+      <label>GitHub 계정 아이디
+        <input type="text" id="gh-owner" placeholder="예: jeffreyoh-thinking" autocomplete="off">
+      </label>
+      <label>저장소 이름
+        <input type="text" id="gh-repo" placeholder="예: chaewoo" autocomplete="off">
+      </label>
+      <label>브랜치
+        <input type="text" id="gh-branch" placeholder="main" autocomplete="off">
+      </label>
+      <label>Personal Access Token
+        <input type="password" id="gh-token" placeholder="ghp_..." autocomplete="off">
+      </label>
+      <p class="modal-status" id="gh-status"></p>
+      <div class="modal-actions">
+        <button type="button" id="gh-disconnect" class="reset-btn">연결 끊기</button>
+        <button type="button" id="gh-save" class="save-btn">저장하고 연결</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

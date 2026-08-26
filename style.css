@@ -290,6 +290,120 @@ footer {
   font-size: 13px;
 }
 
+/* ---------- 동기화 뱃지 & 설정 버튼 ---------- */
+
+.sync-badge {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f3e8ff;
+  color: var(--purple);
+}
+
+.sync-badge.ok { background: #dcfce7; color: #16a34a; }
+.sync-badge.err { background: #fee2e2; color: #dc2626; }
+
+.settings-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.settings-btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* ---------- 설정 모달 ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  width: min(100%, 360px);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.modal h3 { font-size: 17px; margin-bottom: 10px; }
+
+.modal-hint {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0 0 16px;
+}
+
+.modal label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.modal input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #e4defa;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.modal-status {
+  min-height: 18px;
+  font-size: 13px;
+  margin: 4px 0 8px;
+}
+
+.modal-status.ok { color: #16a34a; }
+.modal-status.err { color: #dc2626; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.save-btn {
+  border: none;
+  background: var(--purple);
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.save-btn:hover { background: #7c4fe0; }
+
 @media (max-width: 480px) {
   .cover { min-height: 38vh; padding-bottom: 60px; }
   .avatar { width: 96px; height: 96px; }
