@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나만의 홈페이지</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="cover" id="cover-photo">
+    <button class="edit-btn cover-edit" data-target="cover-photo" data-shape="cover">📷 커버 사진 바꾸기</button>
+    <div class="profile">
+      <div class="avatar" id="avatar-photo">
+        <button class="edit-btn avatar-edit" data-target="avatar-photo" data-shape="avatar">📷</button>
+      </div>
+      <h1>안녕하세요, 저는 <span class="name">오채우</span> 입니다</h1>
+      <p class="tagline">중학교 2학년 · 사진 찍는 걸 좋아해요 📸</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h2>🙋 자기소개</h2>
+      <p>
+        안녕하세요! 저는 기타와 게임 베드민턴과 큐브를 좋아합니다. 그리고 친구들이랑 노는 것을 좋아하는 중학생입니다.
+        여기는 제 이야기와 사진들을 모아두는 저만의 공간이에요. 아래 사진들을 눌러서
+        제 사진으로 바꿔보세요!
+      </p>
+    </section>
+
+    <section class="gallery">
+      <h2>🖼️ 갤러리</h2>
+      <p class="hint">사진 위에 마우스를 올리거나 눌러서 나만의 사진으로 바꿔보세요.</p>
+      <div class="grid">
+        <div class="photo-card" id="photo-1">
+          <button class="edit-btn edit-btn-gallery" data-target="photo-1" data-shape="gallery">📷 이미지 추가하기</button>
+        </div>
+        <div class="photo-card" id="photo-2">
+          <button class="edit-btn edit-btn-gallery" data-target="photo-2" data-shape="gallery">📷 이미지 추가하기</button>
+        </div>
+        <div class="photo-card" id="photo-3">
+          <button class="edit-btn edit-btn-gallery" data-target="photo-3" data-shape="gallery">📷 이미지 추가하기</button>
+        </div>
+        <div class="photo-card" id="photo-4">
+          <button class="edit-btn edit-btn-gallery" data-target="photo-4" data-shape="gallery">📷 이미지 추가하기</button>
+        </div>
+        <div class="photo-card" id="photo-5">
+          <button class="edit-btn edit-btn-gallery" data-target="photo-5" data-shape="gallery">📷 이미지 추가하기</button>
+        </div>
+        <div class="photo-card" id="photo-6">
+          <button class="edit-btn edit-btn-gallery" data-target="photo-6" data-shape="gallery">📷 이미지 추가하기</button>
+        </div>
+        <button class="photo-card add-photo-card" id="add-photo-btn" type="button">
+          <span class="add-icon">＋</span>
+          <span>사진 추가</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="favorites">
+      <h2>⭐ 좋아하는 것들</h2>
+      <ul>
+        <li>🎮 가족</li>
+        <li>🎵 기타</li>
+        <li>⚽ 운동</li>
+        <li>📚 여행</li>
+      </ul>
+    </section>
+
+    <section class="reset-section">
+      <button id="reset-all" class="reset-btn">↺ 모든 사진 샘플로 되돌리기</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>Made with ❤️ by <span class="name">OOO</span></p>
+  </footer>
+
+  <input type="file" id="file-input" accept="image/*" hidden>
+
+  <div class="context-menu" id="context-menu" hidden>
+    <button type="button" data-action="replace">🔄 교체</button>
+    <button type="button" data-action="delete">🗑 삭제</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
