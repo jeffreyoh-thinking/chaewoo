@@ -468,27 +468,4 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-/* ---------- 모든 사진 초기화 ---------- */
-
-document.getElementById("reset-all").addEventListener("click", async () => {
-  if (!requireEditor()) return;
-
-  if (!confirm("기본 6개 슬롯의 사진을 삭제하고 샘플로 되돌릴까요? (직접 추가한 사진은 유지돼요)")) return;
-
-  const cfg = ghConfig();
-  for (const id of Object.keys(PALETTES)) {
-    const entry = ghImageIndex.get(id);
-    if (!entry) continue;
-    try {
-      await ghDeleteFile(cfg, entry.path, entry.sha, `사진 초기화: ${entry.path}`);
-      ghImageIndex.delete(id);
-      document.getElementById(id)?.classList.remove("has-image");
-      applyImage(id, placeholderDataUrl(id));
-    } catch (err) {
-      alert(`${id} 삭제 실패: ${err.message}`);
-    }
-  }
-  flashSyncBadge("☁️ 초기화 완료 ✅", "ok");
-});
-
 initPhotos();

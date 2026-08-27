@@ -261,13 +261,6 @@ section h2 {
 
 /* ---------- 초기화 & 푸터 ---------- */
 
-.reset-section {
-  text-align: center;
-  background: none;
-  box-shadow: none;
-  padding: 0;
-}
-
 .reset-btn {
   border: 1px solid #ddd6f3;
   background: #fff;
