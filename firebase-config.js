@@ -11,3 +11,4 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const guestbookDb = firebase.firestore();
+const guestbookAuth = firebase.auth();

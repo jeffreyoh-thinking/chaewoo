@@ -279,9 +279,28 @@ section h2 {
 }
 
 .guestbook-item {
+  position: relative;
   background: linear-gradient(135deg, #fff0f6, #f3e8ff);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 12px 40px 12px 14px;
+}
+
+.guestbook-item-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.guestbook-item-delete:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text);
 }
 
 .guestbook-item-header {
@@ -421,6 +440,12 @@ footer {
 }
 
 .modal h3 { font-size: 17px; margin-bottom: 10px; }
+
+.modal-divider {
+  border: none;
+  border-top: 1px solid #e4defa;
+  margin: 20px 0;
+}
 
 .modal-hint {
   font-size: 13px;

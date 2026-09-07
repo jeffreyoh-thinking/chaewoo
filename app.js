@@ -476,6 +476,9 @@ const guestbookMessageInput = document.getElementById("guestbook-message");
 const guestbookList = document.getElementById("guestbook-list");
 const guestbookEmpty = document.getElementById("guestbook-empty");
 
+let isGuestbookAdmin = false;
+let lastGuestbookDocs = [];
+
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
@@ -490,12 +493,15 @@ function formatGuestbookDate(ts) {
 
 function renderGuestbookMessages(docs) {
   if (!guestbookList) return;
+  lastGuestbookDocs = docs;
   guestbookEmpty.hidden = docs.length > 0;
+  guestbookEmpty.textContent = "아직 남겨진 메시지가 없어요. 첫 메시지를 남겨보세요!";
   guestbookList.innerHTML = docs
     .map((doc) => {
       const m = doc.data();
       return `
       <li class="guestbook-item" data-id="${doc.id}">
+        ${isGuestbookAdmin ? `<button type="button" class="guestbook-item-delete" data-id="${doc.id}" title="삭제">🗑</button>` : ""}
         <div class="guestbook-item-header">
           <span class="guestbook-item-name">${escapeHtml(m.name)}</span>
           <span class="guestbook-item-date">${formatGuestbookDate(m.ts)}</span>
@@ -504,6 +510,14 @@ function renderGuestbookMessages(docs) {
       </li>`;
     })
     .join("");
+}
+
+async function deleteGuestbookMessage(id) {
+  try {
+    await guestbookDb.collection("guestbook").doc(id).delete();
+  } catch (err) {
+    alert("메시지를 삭제하지 못했어요: " + err.message);
+  }
 }
 
 function initGuestbook() {
@@ -543,8 +557,57 @@ function initGuestbook() {
       submitBtn.disabled = false;
     }
   });
+
+  guestbookList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".guestbook-item-delete");
+    if (!btn) return;
+    if (!confirm("이 메시지를 삭제할까요?")) return;
+    deleteGuestbookMessage(btn.dataset.id);
+  });
 }
 
 initGuestbook();
+
+/* ---------- 방명록 관리자 로그인 (Firebase Auth) ---------- */
+
+const adminEmailInput = document.getElementById("admin-email");
+const adminPasswordInput = document.getElementById("admin-password");
+const adminLoginBtn = document.getElementById("admin-login");
+const adminLogoutBtn = document.getElementById("admin-logout");
+
+function setAdminStatus(msg, kind) {
+  const el = document.getElementById("admin-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "modal-status" + (kind ? ` ${kind}` : "");
+}
+
+adminLoginBtn?.addEventListener("click", async () => {
+  const email = adminEmailInput.value.trim();
+  const password = adminPasswordInput.value;
+  if (!email || !password) {
+    setAdminStatus("이메일과 비밀번호를 입력해주세요.", "err");
+    return;
+  }
+  setAdminStatus("로그인 중...", "");
+  try {
+    await guestbookAuth.signInWithEmailAndPassword(email, password);
+    adminPasswordInput.value = "";
+    setAdminStatus("로그인 완료 ✅ 이제 메시지를 삭제할 수 있어요.", "ok");
+  } catch (err) {
+    setAdminStatus("로그인 실패: " + err.message, "err");
+  }
+});
+
+adminLogoutBtn?.addEventListener("click", async () => {
+  await guestbookAuth.signOut();
+  setAdminStatus("로그아웃했어요.", "");
+});
+
+guestbookAuth?.onAuthStateChanged((user) => {
+  isGuestbookAdmin = !!user;
+  if (adminEmailInput && user) adminEmailInput.value = user.email;
+  renderGuestbookMessages(lastGuestbookDocs);
+});
 
 initPhotos();
