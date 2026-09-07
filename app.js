@@ -468,4 +468,83 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+/* ---------- 게시판 (채우에게 한마디 하기) - Firestore 연동 ---------- */
+
+const guestbookForm = document.getElementById("guestbook-form");
+const guestbookNameInput = document.getElementById("guestbook-name");
+const guestbookMessageInput = document.getElementById("guestbook-message");
+const guestbookList = document.getElementById("guestbook-list");
+const guestbookEmpty = document.getElementById("guestbook-empty");
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatGuestbookDate(ts) {
+  if (!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function renderGuestbookMessages(docs) {
+  if (!guestbookList) return;
+  guestbookEmpty.hidden = docs.length > 0;
+  guestbookList.innerHTML = docs
+    .map((doc) => {
+      const m = doc.data();
+      return `
+      <li class="guestbook-item" data-id="${doc.id}">
+        <div class="guestbook-item-header">
+          <span class="guestbook-item-name">${escapeHtml(m.name)}</span>
+          <span class="guestbook-item-date">${formatGuestbookDate(m.ts)}</span>
+        </div>
+        <div class="guestbook-item-text">${escapeHtml(m.text)}</div>
+      </li>`;
+    })
+    .join("");
+}
+
+function initGuestbook() {
+  if (typeof guestbookDb === "undefined" || !guestbookForm) return;
+
+  guestbookDb
+    .collection("guestbook")
+    .orderBy("ts", "desc")
+    .limit(100)
+    .onSnapshot(
+      (snapshot) => renderGuestbookMessages(snapshot.docs),
+      (err) => {
+        console.error(err);
+        guestbookEmpty.hidden = false;
+        guestbookEmpty.textContent = "메시지를 불러오지 못했어요. 잠시 후 다시 시도해주세요.";
+      }
+    );
+
+  guestbookForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = guestbookNameInput.value.trim();
+    const text = guestbookMessageInput.value.trim();
+    if (!name || !text) return;
+
+    const submitBtn = guestbookForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    try {
+      await guestbookDb.collection("guestbook").add({
+        name,
+        text,
+        ts: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      guestbookForm.reset();
+    } catch (err) {
+      alert("메시지를 남기지 못했어요: " + err.message);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+initGuestbook();
+
 initPhotos();

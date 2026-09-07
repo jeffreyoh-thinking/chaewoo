@@ -59,6 +59,18 @@
       </div>
     </section>
 
+    <section class="guestbook">
+      <h2>💌 채우에게 한마디 하기</h2>
+      <p class="hint">따뜻한 응원 메시지를 남겨주세요! 누구나 볼 수 있어요 💬</p>
+      <form id="guestbook-form" class="guestbook-form">
+        <input type="text" id="guestbook-name" placeholder="이름" maxlength="20" required>
+        <textarea id="guestbook-message" placeholder="채우에게 하고 싶은 말을 남겨주세요" maxlength="200" required></textarea>
+        <button type="submit" class="save-btn">✍️ 남기기</button>
+      </form>
+      <ul class="guestbook-list" id="guestbook-list"></ul>
+      <p class="guestbook-empty" id="guestbook-empty">아직 남겨진 메시지가 없어요. 첫 메시지를 남겨보세요!</p>
+    </section>
+
     <section class="favorites">
       <h2>⭐ 좋아하는 것들</h2>
       <ul>
@@ -100,6 +112,9 @@
     </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
