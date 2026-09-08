@@ -335,6 +335,25 @@ section h2 {
 
 .guestbook-empty[hidden] { display: none; }
 
+.guestbook-more-btn {
+  display: block;
+  margin: 14px auto 0;
+  border: 1px solid #ddd6f3;
+  background: #fff;
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.guestbook-more-btn:hover {
+  background: #f3e8ff;
+  color: var(--text);
+}
+
+.guestbook-more-btn[hidden] { display: none; }
+
 /* ---------- 좋아하는 것들 ---------- */
 
 .favorites ul {

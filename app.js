@@ -332,6 +332,15 @@ ghDisconnectBtn.addEventListener("click", async () => {
   await initPhotos();
 });
 
+/* ---------- 이메일 알림 (EmailJS) ---------- */
+
+function sendEmailNotification(title, message) {
+  if (typeof emailjs === "undefined" || EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY") return;
+  emailjs
+    .send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { title, message })
+    .catch((err) => console.error("이메일 알림 실패:", err));
+}
+
 /* ---------- 사진 업로드(편집 버튼 / 추가 버튼) ---------- */
 
 function requireEditor() {
@@ -392,6 +401,7 @@ fileInput.addEventListener("change", async () => {
     const result = await ghPutFile(cfg, path, dataUrlToBase64(dataUrl), `사진 업데이트: ${path}`);
     ghImageIndex.set(id, { path, sha: result.content.sha });
     flashSyncBadge("☁️ 저장됨 ✅", "ok");
+    sendEmailNotification("🖼️ 새 사진이 올라왔어요", `사진이 추가/교체되었습니다: ${path}`);
   } catch (err) {
     alert("사진을 저장하지 못했어요: " + err.message);
   }
@@ -475,9 +485,12 @@ const guestbookNameInput = document.getElementById("guestbook-name");
 const guestbookMessageInput = document.getElementById("guestbook-message");
 const guestbookList = document.getElementById("guestbook-list");
 const guestbookEmpty = document.getElementById("guestbook-empty");
+const guestbookMoreBtn = document.getElementById("guestbook-more");
 
+const GUESTBOOK_PAGE_SIZE = 10;
 let isGuestbookAdmin = false;
 let lastGuestbookDocs = [];
+let guestbookVisibleCount = GUESTBOOK_PAGE_SIZE;
 
 function escapeHtml(str) {
   const div = document.createElement("div");
@@ -497,6 +510,7 @@ function renderGuestbookMessages(docs) {
   guestbookEmpty.hidden = docs.length > 0;
   guestbookEmpty.textContent = "아직 남겨진 메시지가 없어요. 첫 메시지를 남겨보세요!";
   guestbookList.innerHTML = docs
+    .slice(0, guestbookVisibleCount)
     .map((doc) => {
       const m = doc.data();
       return `
@@ -510,6 +524,8 @@ function renderGuestbookMessages(docs) {
       </li>`;
     })
     .join("");
+
+  if (guestbookMoreBtn) guestbookMoreBtn.hidden = docs.length <= guestbookVisibleCount;
 }
 
 async function deleteGuestbookMessage(id) {
@@ -551,6 +567,7 @@ function initGuestbook() {
         ts: firebase.firestore.FieldValue.serverTimestamp(),
       });
       guestbookForm.reset();
+      sendEmailNotification("💌 새 방명록 메시지가 도착했어요", `${name}: ${text}`);
     } catch (err) {
       alert("메시지를 남기지 못했어요: " + err.message);
     } finally {
@@ -563,6 +580,11 @@ function initGuestbook() {
     if (!btn) return;
     if (!confirm("이 메시지를 삭제할까요?")) return;
     deleteGuestbookMessage(btn.dataset.id);
+  });
+
+  guestbookMoreBtn?.addEventListener("click", () => {
+    guestbookVisibleCount += GUESTBOOK_PAGE_SIZE;
+    renderGuestbookMessages(lastGuestbookDocs);
   });
 }
 
